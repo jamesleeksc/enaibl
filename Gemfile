@@ -14,9 +14,16 @@ gem "bootsnap", require: false
 gem "roo"
 gem "devise"
 gem "csv"
+gem 'google-apis-gmail_v1', '~> 0.15.0'
+gem 'googleauth', '~> 0.17.0'
+gem 'dotenv'
+gem 'better_errors'
+gem "ruby-openai"
+gem 'sass-rails', '>= 6'
 
 group :development, :test do
   gem "pry-byebug"
+  gem "binding_of_caller"
   gem "debug", platforms: %i[ mri windows ]
   gem "rubocop"
 end
