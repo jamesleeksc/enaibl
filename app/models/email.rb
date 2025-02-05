@@ -72,4 +72,8 @@ class Email < ApplicationRecord
     self.user_id == user.id ||
     self.client_account_id != user.client_account_id
   end
+
+  def process_documents
+
+  end
 end

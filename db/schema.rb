@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_08_30_061715) do
+ActiveRecord::Schema[7.1].define(version: 2024_08_30_230627) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -32,6 +32,19 @@ ActiveRecord::Schema[7.1].define(version: 2024_08_30_061715) do
     t.string "eadaptor_username"
     t.string "eadaptor_password"
     t.string "eadaptor_endpoint"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "documents", force: :cascade do |t|
+    t.integer "email_id"
+    t.integer "parent_document_id"
+    t.integer "shipment_id"
+    t.string "filename"
+    t.string "content"
+    t.string "category"
+    t.integer "user_id"
+    t.integer "client_account_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
@@ -195,6 +208,15 @@ ActiveRecord::Schema[7.1].define(version: 2024_08_30_061715) do
     t.index ["client_account_id"], name: "index_organizations_on_client_account_id"
     t.index ["organization_code"], name: "index_organizations_on_organization_code", unique: true
     t.index ["user_id"], name: "index_organizations_on_user_id"
+  end
+
+  create_table "prompts", force: :cascade do |t|
+    t.string "model"
+    t.text "input"
+    t.string "output"
+    t.string "task_type"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "shipments", force: :cascade do |t|
