@@ -21,7 +21,7 @@
           <td><%= email.html_categories %></td>
           <!-- build shipment button -->
           <td>
-            <%= link_to new_shipment_path(email_id: email.id), class: "btn btn-primary text-nowrap" do %>
+            <%= link_to new_shipment_path(email_id: email.id), class: "btn btn-primary text-nowrap", data: { turbo: false } do %>
               Build Draft
               <i class="fas fa-angle-double-right ms-2"></i>
             <% end %>

@@ -2,26 +2,34 @@
 <table class="table">
   <thead>
     <tr>
-      <th>Shipment ID</th>
-      <th>Client Account</th>
-      <th>Carrier</th>
-      <th>Tracking Number</th>
+      <th>Platform Shipment ID</th>
+      <th>BOL #</th>
+      <th>PO #</th>
+      <th>Origin Code</th>
+      <th>Destination</th>
+      <th>Customer</th>
+      <th>Shipper</th>
+      <th>Consignee</th>
       <th>Shipment Date</th>
-      <th>Delivery Date</th>
-      <th>Shipment Status</th>
+      <th>ETD</th>
+      <th>ETA</th>
       <th>Actions</th>
     </tr>
   </thead>
   <tbody>
     <% @shipments.each do |shipment| %>
       <tr>
-        <td><%= shipment.id %></td>
-        <td><%= shipment.client_account.full_name %></td>
-        <td><%= shipment.carrier %></td>
-        <td><%= shipment.tracking_number %></td>
-        <td><%= shipment.shipment_date %></td>
-        <td><%= shipment.delivery_date %></td>
-        <td><%= shipment.shipment_status %></td>
+        <td><%= shipment.platform_shipment_id %></td>
+        <td><%= shipment.bol_number %></td>
+        <td><%= shipment.po_number %></td>
+        <td><%= shipment.origin_code %></td>
+        <td><%= shipment.destination_code %></td>
+        <td><%= shipment.customer_code %></td>
+        <td><%= shipment.shipper_code %></td>
+        <td><%= shipment.consignee_code %></td>
+        <td><%= shipment.shipped_date %></td>
+        <td><%= shipment.etd %></td>
+        <td><%= shipment.eta %></td>
         <td>
           <%= link_to "Show", shipment_path(shipment), class: "btn btn-primary" %>
           <%= link_to "Edit", edit_shipment_path(shipment), class: "btn btn-secondary" %>
