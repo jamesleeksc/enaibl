@@ -1,0 +1,34 @@
+<div id="emails">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Subject</th>
+        <th>From</th>
+        <th>To</th>
+        <th>Received</th>
+        <th>Classification</th>
+        <th>Shipments</th>
+      </tr>
+    </thead>
+    <tbody class="table-group-divider table-divider-color">
+      <% @emails.each do |email| %>
+        <% next if email.irrelevant? %>
+        <tr>
+          <td><%= email["subject"].truncate(50) %></td>
+          <td><%= email["from"] %></td>
+          <td><%= email["to"] %></td>
+          <td><%= email.date.strftime("%m/%d/%Y") %></td>
+          <td><%= email.html_categories %></td>
+          <!-- build shipment button -->
+          <td>
+            <%= link_to new_shipment_path(email_id: email.id), class: "btn btn-primary text-nowrap" do %>
+              Build Draft
+              <i class="fas fa-angle-double-right ms-2"></i>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+<%= link_to "Load Emails", email_sync_path, class: "btn btn-primary w-100", data: { turbo: false } %>

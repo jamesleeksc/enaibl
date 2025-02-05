@@ -1,0 +1,15 @@
+<% if @client_account.persisted? %>
+  <h1><%= @client_account.full_name %></h1>
+  <p><%= @client_account.address_1 %></p>
+  <p><%= @client_account.address_2 %></p>
+  <p><%= @client_account.city %></p>
+  <p><%= @client_account.state %></p>
+  <p><%= @client_account.postcode %></p>
+  <p><%= @client_account.country_region %></p>
+  <p><%= @client_account.email %></p>
+  <p><%= @client_account.phone %></p>
+  <%= link_to "Edit", edit_client_account_path(@client_account) %>
+<% else %>
+  <h1>Add a client account</h1>
+  <%= link_to "Add a client account", new_client_account_path %>
+<% end %>

@@ -1,0 +1,238 @@
+<%#
+["id",
+ "origin_code",
+ "destination_code",
+ "transport_type",
+ "container_type",
+ "shipment_type",
+ "shipper_code",
+ "consignee_code",
+ "customer_code",
+ "origin_location_id",
+ "destination_location_id",
+ "weight",
+ "weight_units",
+ "volume",
+ "volume_units",
+ "length",
+ "width",
+ "height",
+ "measurement_units",
+ "po_number",
+ "bol_number",
+ "shipped_date",
+ "issue_date",
+ "eta",
+ "etd",
+ "description",
+ "commodity_code",
+ "initial_platform",
+ "destination_platform",
+ "platform_shipment_id",
+ "platform_consol_id",
+ "draft",
+ "uploaded_to_platform_at",
+ "eadaptor_data_id",
+ "client_account_id",
+ %>
+<%= form_with(model: @shipment, local: true) do |form| %>
+  <div class="row">
+    <div class="col-md-6">
+      <div class="mb-3">
+        <%= form.label :platform_shipment_id %>
+        <%= form.text_field :platform_shipment_id, class: "form-control" %>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="mb-3">
+        <%= form.label :platform_consol_id %>
+        <%= form.text_field :platform_consol_id, class: "form-control" %>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <div class="mb-3">
+        <%= form.label :origin_code %>
+        <%= form.text_field :origin_code, class: "form-control" %>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="mb-3">
+        <%= form.label :destination_code %>
+        <%= form.text_field :destination_code, class: "form-control" %>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <div class="mb-3">
+        <%= form.label :transport_type %>
+        <%= form.text_field :transport_type, class: "form-control" %>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="mb-3">
+        <%= form.label :container_type %>
+        <%= form.text_field :container_type, class: "form-control" %>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <div class="mb-3">
+        <%= form.label :shipment_type %>
+        <%= form.text_field :shipment_type, class: "form-control" %>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="mb-3">
+        <%= form.label :shipper_code %>
+        <%= form.text_field :shipper_code, class: "form-control" %>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <div class="mb-3">
+        <%= form.label :consignee_code %>
+        <%= form.text_field :consignee_code, class: "form-control" %>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="mb-3">
+        <%= form.label :customer_code %>
+        <%= form.text_field :customer_code, class: "form-control" %>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <div class="mb-3">
+        <%= form.label :weight %>
+        <%= form.text_field :weight, class: "form-control" %>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="mb-3">
+        <%= form.label :weight_units %>
+        <%= form.text_field :weight_units, class: "form-control" %>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <div class="mb-3">
+        <%= form.label :volume %>
+        <%= form.text_field :volume, class: "form-control" %>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="mb-3">
+        <%= form.label :volume_units %>
+        <%= form.text_field :volume_units, class: "form-control" %>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <div class="mb-3">
+        <%= form.label :length %>
+        <%= form.text_field :length, class: "form-control" %>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="mb-3">
+        <%= form.label :width %>
+        <%= form.text_field :width, class: "form-control" %>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <div class="mb-3">
+        <%= form.label :height %>
+        <%= form.text_field :height, class: "form-control" %>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="mb-3">
+        <%= form.label :measurement_units %>
+        <%= form.text_field :measurement_units, class: "form-control" %>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <div class="mb-3">
+        <%= form.label :po_number %>
+        <%= form.text_field :po_number, class: "form-control" %>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="mb-3">
+        <%= form.label :bol_number %>
+        <%= form.text_field :bol_number, class: "form-control" %>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <div class="mb-3">
+        <%= form.label :shipped_date %>
+        <%= form.text_field :shipped_date, class: "form-control" %>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="mb-3">
+        <%= form.label :issue_date %>
+        <%= form.text_field :issue_date, class: "form-control" %>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <div class="mb-3">
+        <%= form.label :eta %>
+        <%= form.datetime_local_field :eta, class: "form-control" %>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="mb-3">
+        <%= form.label :etd %>
+        <%= form.datetime_local_field :etd, class: "form-control" %>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <div class="mb-3">
+        <%= form.label :description %>
+        <%= form.text_field :description, class: "form-control" %>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="mb-3">
+        <%= form.label :commodity_code %>
+        <%= form.text_field :commodity_code, class: "form-control" %>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <div class="mb-3">
+        <%= form.label :initial_platform %>
+        <%= form.text_field :initial_platform, class: "form-control" %>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="mb-3">
+        <%= form.label :destination_platform %>
+        <%= form.text_field :destination_platform, class: "form-control" %>
+      </div>
+    </div>
+  </div>
+  <div class="mb-3">
+    <%= form.submit "Save", class: "btn btn-primary" %>
+  </div>
+<% end %>

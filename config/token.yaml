@@ -1,0 +1,2 @@
+---
+default: '{"client_id":"801812885986-q0fosfvri5cd7ohqso3l0g8r5i0vmjv4.apps.googleusercontent.com","access_token":"ya29.a0AcM612zNlNOHUcV2PZtzbBBVuVLlAouAJLwKhigMfVL-zAoD5SyMnU8XIcNxeK6dkEzafE7Fc4OJ3_-VIOQSIjf-gUIaa7CBc7mkeqT9yJfLmBl_S3DOHNPVPzpBVTLg3fck-ZiKXTdt5K0eF_r_YXryi3AgBfaQFbMoMJT7mQaCgYKAUcSARASFQHGX2MiM_lQlkTgqNjxUem6KPGlsQ0177","refresh_token":"1//06BVeBC-fXLZwCgYIARAAGAYSNwF-L9IrsHghYL4Rlc3X9HTx_1d6J5kimECj7MEYx4O0vQ7UjVybYUftdhfEyRpapU07k9jo9K8","scope":["https://www.googleapis.com/auth/gmail.readonly"],"expiration_time_millis":1724915970000}'

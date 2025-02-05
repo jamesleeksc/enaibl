@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_08_27_080723) do
+ActiveRecord::Schema[7.1].define(version: 2024_08_30_061715) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -34,6 +34,72 @@ ActiveRecord::Schema[7.1].define(version: 2024_08_27_080723) do
     t.string "eadaptor_endpoint"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "eadaptor_data", force: :cascade do |t|
+    t.string "record_type"
+    t.jsonb "raw"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "emails", force: :cascade do |t|
+    t.string "to"
+    t.string "ccs"
+    t.string "from"
+    t.string "subject"
+    t.text "body"
+    t.string "category"
+    t.datetime "date"
+    t.string "platform"
+    t.string "platform_id"
+    t.bigint "user_id"
+    t.bigint "client_account_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.boolean "irrelevant", default: false
+    t.index ["client_account_id"], name: "index_emails_on_client_account_id"
+    t.index ["user_id"], name: "index_emails_on_user_id"
+  end
+
+  create_table "emails_shipments", id: false, force: :cascade do |t|
+    t.bigint "shipment_id", null: false
+    t.bigint "email_id", null: false
+  end
+
+  create_table "locations", force: :cascade do |t|
+    t.string "proper_name"
+    t.string "code"
+    t.string "port_name"
+    t.string "iata"
+    t.string "iata_region_code"
+    t.string "coordinates"
+    t.decimal "gmt_offset"
+    t.boolean "daylight_savings", default: false
+    t.boolean "in_eu", default: false
+    t.string "economic_group"
+    t.string "country_region_states_code"
+    t.boolean "airport", default: false
+    t.boolean "border_crossing", default: false
+    t.boolean "customs_lodge", default: false
+    t.boolean "discharge", default: false
+    t.boolean "outport", default: false
+    t.boolean "post", default: false
+    t.boolean "rail", default: false
+    t.boolean "road", default: false
+    t.boolean "seaport", default: false
+    t.boolean "store", default: false
+    t.boolean "terminal", default: false
+    t.boolean "unload", default: false
+    t.boolean "active", default: false
+    t.string "source"
+    t.integer "client_account_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["client_account_id"], name: "index_locations_on_client_account_id"
+    t.index ["code"], name: "index_locations_on_code"
+    t.index ["iata"], name: "index_locations_on_iata"
+    t.index ["port_name"], name: "index_locations_on_port_name"
   end
 
   create_table "organization_contacts", force: :cascade do |t|
@@ -63,6 +129,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_08_27_080723) do
     t.boolean "web_access_superseded", default: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "organization_id"
     t.index ["organization_code"], name: "index_organization_contacts_on_organization_code"
   end
 
@@ -124,8 +191,49 @@ ActiveRecord::Schema[7.1].define(version: 2024_08_27_080723) do
     t.string "carrier_category"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "user_id"
     t.index ["client_account_id"], name: "index_organizations_on_client_account_id"
     t.index ["organization_code"], name: "index_organizations_on_organization_code", unique: true
+    t.index ["user_id"], name: "index_organizations_on_user_id"
+  end
+
+  create_table "shipments", force: :cascade do |t|
+    t.string "origin_code"
+    t.string "destination_code"
+    t.string "transport_type"
+    t.string "container_type"
+    t.string "shipment_type"
+    t.string "shipper_code"
+    t.string "consignee_code"
+    t.string "customer_code"
+    t.integer "origin_location_id"
+    t.integer "destination_location_id"
+    t.decimal "weight"
+    t.string "weight_units"
+    t.decimal "volume"
+    t.string "volume_units"
+    t.decimal "length"
+    t.decimal "width"
+    t.decimal "height"
+    t.string "measurement_units"
+    t.string "po_number"
+    t.string "bol_number"
+    t.date "shipped_date"
+    t.date "issue_date"
+    t.datetime "eta"
+    t.datetime "etd"
+    t.string "description"
+    t.string "commodity_code"
+    t.string "initial_platform"
+    t.string "destination_platform"
+    t.string "platform_shipment_id"
+    t.string "platform_consol_id"
+    t.boolean "draft", default: false
+    t.datetime "uploaded_to_platform_at"
+    t.integer "eadaptor_data_id"
+    t.integer "client_account_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "users", force: :cascade do |t|
@@ -144,7 +252,10 @@ ActiveRecord::Schema[7.1].define(version: 2024_08_27_080723) do
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 
+  add_foreign_key "emails", "client_accounts"
+  add_foreign_key "emails", "users"
   add_foreign_key "organization_contacts", "organizations", column: "organization_code", primary_key: "organization_code"
   add_foreign_key "organizations", "client_accounts"
+  add_foreign_key "organizations", "users"
   add_foreign_key "users", "client_accounts"
 end

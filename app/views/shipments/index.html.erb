@@ -1,0 +1,33 @@
+<h1>Shipments</h1>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Shipment ID</th>
+      <th>Client Account</th>
+      <th>Carrier</th>
+      <th>Tracking Number</th>
+      <th>Shipment Date</th>
+      <th>Delivery Date</th>
+      <th>Shipment Status</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @shipments.each do |shipment| %>
+      <tr>
+        <td><%= shipment.id %></td>
+        <td><%= shipment.client_account.full_name %></td>
+        <td><%= shipment.carrier %></td>
+        <td><%= shipment.tracking_number %></td>
+        <td><%= shipment.shipment_date %></td>
+        <td><%= shipment.delivery_date %></td>
+        <td><%= shipment.shipment_status %></td>
+        <td>
+          <%= link_to "Show", shipment_path(shipment), class: "btn btn-primary" %>
+          <%= link_to "Edit", edit_shipment_path(shipment), class: "btn btn-secondary" %>
+          <%= link_to "Delete", shipment_path(shipment), method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-danger" %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

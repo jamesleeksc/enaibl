@@ -73,4 +73,11 @@ Rails.application.configure do
 
   # Raise error when a before_action's only/except options reference missing actions
   config.action_controller.raise_on_missing_callback_actions = true
+  config.web_console.whitelisted_ips = '0.0.0.0/0'
+
+  config.hosts << "d01b-2600-8801-c800-5c0-ecb9-9e77-d6ca-3e8a.ngrok-free.app"
+  config.hosts << "localhost"
+  config.hosts << "localhost:3000"
+  config.hosts << ENV["NGROK_URL"]
+  config.hosts.clear
 end

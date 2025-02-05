@@ -1,0 +1,15 @@
+<h1><%= @client_account.full_name.present? ? @client_account.full_name : "Configure your organization" %></h1>
+<%# # display smaller font size %>
+<div class="row">
+  <div class="col-md-6">
+    <div class="mb-3">
+      <p class="fs-6">Please provide your organization details</p>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="mb-3">
+      <%= link_to "Back", client_accounts_path, class: "btn btn-secondary" %>
+    </div>
+  </div>
+</div>
+<%= render 'form', client_account: @client_account %>

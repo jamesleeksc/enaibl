@@ -4,10 +4,23 @@ Rails.application.routes.draw do
   post 'api/eadaptor' => 'api#eadaptor'
   put 'api/eadaptor' => 'api#eadaptor'
 
-  resources :organizations
+  resources :organizations, except: [:show]
   resources :client_accounts
+  resources :email
+  resources :shipments
 
-  get 'import_orgs' => 'organization#import'
+  get 'email_sync' => 'email#sync'
+
+  get 'organizations/import' => 'organizations#import'
+  get 'organizations/import_contacts' => 'organizations#import_contacts'
+  post 'organizations/upload' => 'organizations#upload'
+  post 'organizations/upload_contacts' => 'organizations#upload_contacts'
+
+  post "google/auth", to: "google#auth"
+  get "google/auth", to: "google#auth"
+
+  post "oauth2callback", to: "google#auth"
+  get "oauth2callback", to: "google#auth"
 
   root to: 'static#index'
 end

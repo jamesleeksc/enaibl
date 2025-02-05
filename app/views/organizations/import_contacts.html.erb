@@ -1,0 +1,11 @@
+<h1>Import Organization Contacts</h1>
+<p>Import contacts from an Excel or CSV file export from Cargowise</p>
+<% if current_user.client_account.present? %>
+  <%= form_tag organizations_upload_contacts_path, multipart: true do %>
+    <%= file_field_tag :file %>
+    <%= submit_tag "Import" %>
+  <% end %>
+<% else %>
+  <p>You need to have a client account to import organizations</p>
+  <%= link_to "Add a client account", new_client_account_path %>
+<% end %>

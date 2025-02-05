@@ -1,0 +1,23 @@
+<h1>Organizations</h1>
+<div class="row">
+  <div class="col-sm-6">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">Organizations</h5>
+        <h6 class="card-subtitle mb-2 text-muted"><%= @organization_ids.size %> saved organizations</h6>
+        <p class="card-text">Import your organizations from Cargowise</p>
+        <%= link_to "Import Organizations", organizations_import_path, class: "btn btn-primary" %>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">Contacts</h5>
+        <h6 class="card-subtitle mb-2 text-muted"><%= @organization_contacts_size %> saved contacts</h6>
+        <p class="card-text">Import contacts for your organizations from Cargowise</p>
+        <%= link_to "Import Organization Contacts", organizations_import_contacts_path, class: "btn btn-primary" %>
+      </div>
+    </div>
+  </div>
+</div>
