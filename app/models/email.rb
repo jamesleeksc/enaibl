@@ -2,6 +2,7 @@ class Email < ApplicationRecord
   belongs_to :user, optional: true
   belongs_to :client_account, optional: true
   has_and_belongs_to_many :shipments
+  has_many :documents
 
   # classify after create
   after_create :classify
