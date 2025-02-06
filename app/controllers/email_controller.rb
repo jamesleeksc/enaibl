@@ -40,9 +40,9 @@ class EmailController < ApplicationController
       end
 
       @messages.each do |message|
-        parsed = gmail_service.parse_message(message)
         next if Email.find_by(platform_id: message.id)
-        Email.create(
+        parsed = gmail_service.parse_message(message)
+        email = Email.create(
           to: parsed[:to],
           from: parsed[:from],
           subject: parsed[:subject],
@@ -53,6 +53,22 @@ class EmailController < ApplicationController
           user: current_user,
           client_account: current_user.client_account
         )
+
+        if parsed[:attachments].present?
+          parsed[:attachments].each do |attachment|
+            filename = sanitize_filename(attachment[:filename])
+            doc = email.documents.create(
+              filename: filename,
+              user: current_user,
+              client_account: current_user.client_account
+            )
+
+            attachment_data = attachment[:data]
+            attachment_data.rewind
+
+            doc.file.attach(io: attachment[:data], filename: filename, content_type: attachment[:mime_type])
+          end
+        end
       end
 
       respond_to do |format|
@@ -73,7 +89,7 @@ class EmailController < ApplicationController
     user_id = 'default'
     credentials = authorizer.get_credentials(user_id)
 
-    if credentials.nil?
+    if credentials.nil? || credentials.expired?
       url = authorizer.get_authorization_url(base_url: redirect_uri)
       return url
     end
@@ -85,5 +101,9 @@ class EmailController < ApplicationController
     user_id = 'me'
     result = @service.list_user_messages(user_id)
     result.messages || []
+  end
+
+  def sanitize_filename(filename)
+    filename.gsub(/[^0-9A-Za-z.\-]/, '_')
   end
 end
