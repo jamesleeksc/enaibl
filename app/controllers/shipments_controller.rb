@@ -32,7 +32,6 @@ class ShipmentsController < ApplicationController
     subject = "subject: #{email.subject}"
     body = "body: #{email.body}"
     email_string = [to, from, subject, body, email.date].join("\n")
-    binding.pry
     shipment_data = OpenAiService.new.extract_shipment(email_string)
 
     shipment_data = clean_and_format_shipment_data(shipment_data)
