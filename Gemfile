@@ -20,6 +20,11 @@ gem 'dotenv'
 gem 'better_errors'
 gem "ruby-openai"
 gem 'sass-rails', '>= 6'
+gem "aws-sdk-s3", require: false
+gem "pdf-reader"
+gem "mini_magick"
+gem "rtesseract"
+gem "docx"
 
 group :development, :test do
   gem "pry-byebug"
