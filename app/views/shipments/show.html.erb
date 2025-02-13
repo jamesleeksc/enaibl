@@ -1,0 +1,22 @@
+<%# show all fields for @shipment as readonly %>
+<h1>Shipment</h1>
+<h3>BOL #: <%= @shipment.bol_number.present? ? @shipment.bol_number : "N/A"  %></h3>
+<h3>PO #: <%= @shipment.po_number.present? ? @shipment.po_number : "N/A" %></h2>
+<h3>Platform Shipment ID: <%= @shipment.platform_shipment_id.present? ? @shipment.platform_shipment_id : "N/A" %></h3>
+
+<%# Edit, Push to Cargowise %>
+<div class="row m-3">
+  <div class="col-md-6">
+    <%= link_to "Edit", edit_shipment_path(@shipment), class: "btn btn-secondary" %>
+    <%= link_to "Push to Cargowise", cargowise_shipment_path(shipment_id: @shipment.id), class: "btn btn-primary", data: { turbo_method: :post } %>
+  </div>
+</div>
+
+<table class="table-bordered">
+  <% @shipment.attributes.except("id", "created_at", "updated_at", "platform_shipment_id", "bol_number", "po_number").each do |key, value| %>
+    <tr>
+      <td><strong><%= key.humanize.upcase %></strong></td>
+      <td><%= value %></td>
+    </tr>
+  <% end %>
+</table>

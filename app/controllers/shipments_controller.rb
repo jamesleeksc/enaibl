@@ -3,6 +3,12 @@ class ShipmentsController < ApplicationController
   before_action :set_shipment, only: %i[show edit update destroy]
 
   def create
+    @shipment = Shipment.new(shipment_params)
+    @shipment.client_account = current_user.client_account
+    @email = load_user_email(params[:email_id]) if params[:email_id]
+    @shipment.emails << @email if @email
+    @shipment.save
+    redirect_to shipment_path(@shipment)
   end
 
   def destroy
@@ -25,6 +31,7 @@ class ShipmentsController < ApplicationController
     if @email
       @shipment.emails << @email
       email = @email
+      @documents = email.documents.where.not(content: nil).where.not(irrelevant: true)
     end
 
     to = "to: #{email.to}"
@@ -33,6 +40,13 @@ class ShipmentsController < ApplicationController
     body = "body: #{email.body}"
     email_string = [to, from, subject, body, email.date].join("\n")
     shipment_data = OpenAiService.new.extract_shipment(email_string)
+    @documents.each do |doc|
+      begin
+        shipment_data.merge!(OpenAiService.new.extract_shipment(doc.content))
+      rescue
+        next
+      end
+    end
 
     shipment_data = clean_and_format_shipment_data(shipment_data)
 
@@ -54,6 +68,7 @@ class ShipmentsController < ApplicationController
   end
 
   def origin_location_from_data(data)
+    return unless data.present? && data.is_a?(Hash)
     data = data.select { |k, v| k.match?(/origin/i) && v.present?}
     data.transform_keys! { |k| k.gsub('origin_', '') }
     data["state"] = data.delete("state_code")
@@ -70,6 +85,7 @@ class ShipmentsController < ApplicationController
   end
 
   def destination_location_from_data(data)
+    return unless data.present? && data.is_a?(Hash)
     data = data.select { |k, v| k.match?(/destination/i) && v.present?}
     data.transform_keys! { |k| k.gsub('destination_', '') }
     data["state"] = data.delete("state_code")
@@ -86,7 +102,7 @@ class ShipmentsController < ApplicationController
   end
 
   def set_shipment
-    @shipment = account_shipments.find_by(params[:id])
+    @shipment = account_shipments.find_by(id: params[:id])
   end
 
   def account_shipments
@@ -97,5 +113,39 @@ class ShipmentsController < ApplicationController
     email = Email.find_by(id: id)
     return unless email.owned_by?(current_user)
     email
+  end
+
+  def shipment_params
+    params.require(:shipment).permit(
+      :platform_shipment_id,
+      :platform_consol_id,
+      :origin_code,
+      :destination_code,
+      :transport_type,
+      :container_type,
+      :shipment_type,
+      :shipper_code,
+      :consignee_code,
+      :customer_code,
+      :weight,
+      :weight_units,
+      :volume,
+      :volume_units,
+      :length,
+      :width,
+      :height,
+      :measurement_units,
+      :po_number,
+      :bol_number,
+      :shipped_date,
+      :issue_date,
+      :eta,
+      :etd,
+      :description,
+      :commodity_code,
+      :initial_platform,
+      :destination_platform,
+      :line_items
+    )
   end
 end

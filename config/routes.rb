@@ -8,6 +8,7 @@ Rails.application.routes.draw do
   resources :client_accounts
   resources :email
   resources :shipments
+  resources :invoices
 
   get 'email_sync' => 'email#sync'
 
@@ -21,6 +22,8 @@ Rails.application.routes.draw do
 
   post "oauth2callback", to: "google#auth"
   get "oauth2callback", to: "google#auth"
+
+  post 'cargowise_shipment' => 'cargowise#create_shipment'
 
   root to: 'static#index'
 end

@@ -75,8 +75,11 @@ Rails.application.configure do
   config.action_controller.raise_on_missing_callback_actions = true
   config.web_console.whitelisted_ips = '0.0.0.0/0'
 
-  config.hosts << "49c0-98-97-39-3.ngrok-free.app"
+  config.hosts << "ad3c-2600-8801-c800-b130-b4f4-cfbf-4519-31f6.ngrok-free.app"
   config.hosts << "localhost"
+  config.web_console.permissions = '0.0.0.0/0'
+  config.web_console.permissions = '::/0'
+
   config.hosts << "localhost:3000"
   config.hosts << ENV["NGROK_URL"]
   config.hosts.clear

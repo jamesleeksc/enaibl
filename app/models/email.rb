@@ -4,13 +4,16 @@ class Email < ApplicationRecord
   has_and_belongs_to_many :shipments
   has_many :documents
 
-  # classify after create
+  # TODO: extract and classify in a job after create
+  # classify and mark relevance after create
   after_create :classify
+  after_create :mark_relevance
+  # TODO: Mark actionable
 
-  # irrelevant scope
   scope :irrelevant, -> { where(irrelevant: true) }
 
   def self.categories(raw)
+    return [] if raw.blank?
     begin
       sanitized = raw.gsub("```json", "").gsub("```", "").gsub("\n", "")
       return [] if sanitized.blank?
@@ -49,10 +52,27 @@ class Email < ApplicationRecord
     'badge-light'
   end
 
+  def mark_relevance
+    self.irrelevant = true if self.categories.include?('irrelevant')
+    save if self.changed?
+  end
+
   def classify
     # TODO: classify attachments also
     self.category = OpenAiService.new.classify_document("Subject: #{subject}\nMessage:#{body}")
     save
+  end
+
+  def classify_pod
+    return unless content.present?
+    classification = OpenAiService.new.pod?(content)
+    update(pod: classification)
+  end
+
+  def self.classify_all_pod
+    Email.where(pod: nil).each do |email|
+      email.classify_pod
+    end
   end
 
   def categories
@@ -76,5 +96,9 @@ class Email < ApplicationRecord
 
   def process_documents
 
+  end
+
+  def content
+    "to: #{to}\nfrom: #{from}\nsubject: #{subject}\nbody: #{body}"
   end
 end

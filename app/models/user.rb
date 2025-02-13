@@ -6,5 +6,6 @@ class User < ApplicationRecord
 
   belongs_to :client_account
   has_many :emails
+  has_many :documents
   has_many :organizations
 end
