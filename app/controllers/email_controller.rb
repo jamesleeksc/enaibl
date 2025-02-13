@@ -9,7 +9,11 @@ class EmailController < ApplicationController
 
   def index
     # TODO: pagination and search
-    @emails = Email.where(user_id: current_user).or(Email.where(client_account: current_user.client_account)).all
+    if params[:include_account_emails]
+      @emails = Email.where(user_id: current_user).or(Email.where(client_account: current_user.client_account)).all
+    else
+      @emails = Email.where(user_id: current_user).all
+    end
     shipment_ids = @emails.joins(:shipments).pluck('shipments.id').uniq
     @shipments = Shipment.where(id: shipment_ids)
   end
@@ -21,52 +25,55 @@ class EmailController < ApplicationController
   def sync
     @service = Google::Apis::GmailV1::GmailService.new
     @service.client_options.application_name = APPLICATION_NAME
-    authorization = authorize
+    authorization = authorize(current_user)
 
     if authorization.is_a?(String) && authorization.match?(/^http/)
       redirect_to authorization, allow_other_host: true
     else
       @service.authorization = authorization
-      gmail_service = GmailService.new(authorization)
-      # thread_snippets = gmail_service.list_messages
-
-      # @threads = thread_snippets.map do |snippet|
-      #   gmail_service.get_thread(snippet.id)
-      # end
+      gmail_service = GmailService.new(user: current_user, authorization: authorization)
 
       @message_pointers = gmail_service.list_messages
-      @messages = @message_pointers.map do |message|
-        gmail_service.get_message(message.id)
-      end
 
-      @messages.each do |message|
-        next if Email.find_by(platform_id: message.id)
-        parsed = gmail_service.parse_message(message)
-        email = Email.create(
-          to: parsed[:to],
-          from: parsed[:from],
-          subject: parsed[:subject],
-          body: parsed[:body],
-          date: parsed[:date],
-          platform: 'gmail',
-          platform_id: message.id,
-          user: current_user,
-          client_account: current_user.client_account
-        )
+      @message_pointers.each_slice(50) do |batch|
+        message_ids = batch.map(&:id)
+        messages = gmail_service.get_messages_batch(message_ids)
 
-        if parsed[:attachments].present?
-          parsed[:attachments].each do |attachment|
-            filename = sanitize_filename(attachment[:filename])
-            doc = email.documents.create(
-              filename: filename,
+        messages.each do |message|
+          next if Email.find_by(platform_id: message.id)
+          parsed = gmail_service.parse_message(message)
+
+          begin
+            email = Email.create(
+              to: sanitize_text(parsed[:to]),
+              from: sanitize_text(parsed[:from]),
+              subject: sanitize_text(parsed[:subject]),
+              body: sanitize_text(parsed[:body]),
+              date: parsed[:date],
+              platform: 'gmail',
+              platform_id: message.id,
               user: current_user,
               client_account: current_user.client_account
             )
 
-            attachment_data = attachment[:data]
-            attachment_data.rewind
+            if parsed[:attachments].present?
+              parsed[:attachments].each do |attachment|
+                filename = sanitize_filename(attachment[:filename])
+                doc = email.documents.create(
+                  filename: filename,
+                  user: current_user,
+                  client_account: current_user.client_account
+                )
 
-            doc.file.attach(io: attachment[:data], filename: filename, content_type: attachment[:mime_type])
+                attachment_data = attachment[:data]
+                attachment_data.rewind
+
+                doc.file.attach(io: attachment[:data], filename: filename, content_type: attachment[:mime_type])
+              end
+            end
+          rescue ActiveRecord::StatementInvalid => e
+            Rails.logger.error("Failed to create email for message #{message.id}: #{e.message}")
+            next
           end
         end
       end
@@ -78,16 +85,37 @@ class EmailController < ApplicationController
     end
   end
 
-  def authorize
+  # def authorize
+  #   client_id = Rails.application.credentials.dig(:gmail, :client_id)
+  #   client_secret = Rails.application.credentials.dig(:gmail, :client_secret)
+  #   redirect_uri = ENV['REDIRECT_URI']
+
+  #   client_id_obj = Google::Auth::ClientId.new(client_id, client_secret)
+  #   token_store = Google::Auth::Stores::FileTokenStore.new(file: TOKEN_PATH)
+  #   authorizer = Google::Auth::UserAuthorizer.new(client_id_obj, SCOPE, token_store)
+  #   user_id = 'default'
+  #   credentials = authorizer.get_credentials(user_id)
+
+  #   if credentials.nil? || credentials.expired?
+  #     url = authorizer.get_authorization_url(base_url: redirect_uri)
+  #     return url
+  #   end
+
+  #   credentials
+  # end
+
+
+  def authorize(user)
     client_id = Rails.application.credentials.dig(:gmail, :client_id)
     client_secret = Rails.application.credentials.dig(:gmail, :client_secret)
     redirect_uri = ENV['REDIRECT_URI']
-
     client_id_obj = Google::Auth::ClientId.new(client_id, client_secret)
-    token_store = Google::Auth::Stores::FileTokenStore.new(file: TOKEN_PATH)
+    token_store = GoogleAuth::TokenStore.new(user)
     authorizer = Google::Auth::UserAuthorizer.new(client_id_obj, SCOPE, token_store)
-    user_id = 'default'
-    credentials = authorizer.get_credentials(user_id)
+    credentials = authorizer.get_credentials(user.id)
+    if credentials
+      credentials.expires_at = user&.google_expires_at
+    end
 
     if credentials.nil? || credentials.expired?
       url = authorizer.get_authorization_url(base_url: redirect_uri)
@@ -105,5 +133,12 @@ class EmailController < ApplicationController
 
   def sanitize_filename(filename)
     filename.gsub(/[^0-9A-Za-z.\-]/, '_')
+  end
+
+  private
+
+  def sanitize_text(text)
+    return "" if text.nil?
+    text.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')
   end
 end

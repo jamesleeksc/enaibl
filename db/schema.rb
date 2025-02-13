@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_09_03_150740) do
+ActiveRecord::Schema[7.1].define(version: 2024_10_01_210626) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -62,6 +62,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_09_03_150740) do
     t.string "eadaptor_endpoint"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "alias_organizations"
+    t.string "branch_shortcode"
   end
 
   create_table "documents", force: :cascade do |t|
@@ -75,6 +77,13 @@ ActiveRecord::Schema[7.1].define(version: 2024_09_03_150740) do
     t.integer "client_account_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "irrelevant", default: false
+    t.boolean "pod"
+    t.jsonb "invoice_content"
+    t.boolean "invoice", default: false
+    t.string "ap_or_ar"
+    t.boolean "shipping_invoice"
+    t.boolean "confirmed_invoice", default: false
   end
 
   create_table "eadaptor_data", force: :cascade do |t|
@@ -99,6 +108,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_09_03_150740) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "irrelevant", default: false
+    t.boolean "pod"
     t.index ["client_account_id"], name: "index_emails_on_client_account_id"
     t.index ["user_id"], name: "index_emails_on_user_id"
   end
@@ -284,6 +294,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_09_03_150740) do
     t.integer "client_account_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "line_items"
   end
 
   create_table "users", force: :cascade do |t|
@@ -297,6 +308,9 @@ ActiveRecord::Schema[7.1].define(version: 2024_09_03_150740) do
     t.string "first_name"
     t.string "last_name"
     t.bigint "client_account_id"
+    t.string "google_access_token"
+    t.string "google_refresh_token"
+    t.datetime "google_expires_at"
     t.index ["client_account_id"], name: "index_users_on_client_account_id"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true

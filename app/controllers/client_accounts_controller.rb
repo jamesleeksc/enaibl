@@ -62,7 +62,9 @@ class ClientAccountsController < ApplicationController
       :eadaptor_url,
       :eadaptor_username,
       :eadaptor_password,
-      :eadaptor_endpoint
+      :eadaptor_endpoint,
+      :alias_organizations,
+      :branch_shortcode
     )
   end
 

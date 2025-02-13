@@ -72,6 +72,14 @@
     </div>
   </div>
   <div class="mb-3">
+    <%= form.label :alias_organizations, "Alias Organizations", class: "form-label" %>
+    <%= form.text_area :alias_organizations, class: "form-control", rows: 5, placeholder: "Enter each organization name on a new line without addresses" %>
+  </div>
+  <div class="mb-3">
+    <%= form.label :branch_shortcode, class: "form-label" %>
+    <%= form.text_field :branch_shortcode, class: "form-control" %>
+  </div>
+  <div class="mb-3">
     <%= form.submit "Save", class: "btn btn-primary" %>
   </div>
 <% end %>

@@ -31,6 +31,8 @@ class EadaptorService
     else
       puts "Error: #{response.code} - #{response.message}"
     end
+
+    response
   end
 
   def self.shipment_by_key(shipment_key)
@@ -42,6 +44,25 @@ class EadaptorService
               <DataTarget>
                 <Type>ForwardingShipment</Type>
                 <Key>#{shipment_key}</Key>
+              </DataTarget>
+            </DataTargetCollection>
+          </DataContext>
+        </ShipmentRequest>
+      </UniversalShipmentRequest>
+    XML
+    eadaptor_request(data)
+  end
+
+  def self.shipment_by_target(target, key)
+    # ForwardingConsol, ForwardingShipment in Shipment, ForwardingShipment, CustomsDeclaration in SubShipment.
+    data = <<~XML
+      <UniversalShipmentRequest xmlns="http://www.cargowise.com/Schemas/Universal/2011/11" version="1.1">
+        <ShipmentRequest>
+          <DataContext>
+            <DataTargetCollection>
+              <DataTarget>
+                <Type>#{target}</Type>
+                <Key>#{key}</Key>
               </DataTarget>
             </DataTargetCollection>
           </DataContext>
@@ -129,9 +150,10 @@ class EadaptorService
   end
 
   def self.create_shipment(shipment_data)
+    shipment_data = shipment_data.with_indifferent_access
     puts "Creating shipment with data: #{shipment_data.inspect}"
     description = shipment_data[:description]
-    transport_mode = shipment_data[:transport_mode]
+    transport_mode = shipment_data[:transport_type]
     transport_mode ||= "ROA"
 
     transport_modes = {
@@ -211,6 +233,14 @@ class EadaptorService
       "SCN" => "Shipper's Consol Lead"
     }
 
+    if shipment_data[:weight_units].to_s.downcase.include?("lb")
+      weight_units = "LB"
+      weight_unit_description = "Pounds"
+    else
+      weight_units = "KG"
+      weight_unit_description = "Kilograms"
+    end
+
     type_mode = shipment_data[:type_mode]
     type_mode ||= "STD"
     type_description = type_modes[type_mode]
@@ -218,6 +248,10 @@ class EadaptorService
     container_mode = shipment_data[:container_mode]
     container_mode ||= "LSE"
     mode_description = container_modes[container_mode]
+    origin = Location.find_by(code: shipment_data[:origin_code])
+    origin ||= Location.find_by(iata: shipment_data[:origin_code])
+    destination = Location.find_by(code: shipment_data[:destination_code])
+    destination ||= Location.find_by(iata: shipment_data[:destination_code])
 
     # WIP: ADD standard address fields, weights, documents
     data = <<~XML
@@ -241,12 +275,12 @@ class EadaptorService
             <Description>Package</Description>
           </OuterPacksPackageType>
           <PortOfDestination>
-            <Code>AUSYD</Code>
-            <Name>Sydney</Name>
+            <Code>#{destination&.code}</Code>
+            <Name>#{destination&.proper_name}</Name>
           </PortOfDestination>
           <PortOfOrigin>
-            <Code>USLAX</Code>
-            <Name>Los Angeles</Name>
+            <Code>#{origin&.code}</Code>
+            <Name>#{origin&.proper_name}</Name>
           </PortOfOrigin>
           <ReleaseType>
             <Code>EBL</Code>
@@ -260,28 +294,30 @@ class EadaptorService
             <Code>STD</Code>
             <Description>Standard House</Description>
           </ShipmentType>
-          <TotalVolume>1.78</TotalVolume>
+          <TotalVolume>#{shipment_data[:volume].to_f}</TotalVolume>
           <TotalVolumeUnit>
             <Code>M3</Code>
             <Description>Cubic Metres</Description>
           </TotalVolumeUnit>
-          <TotalWeight>156</TotalWeight>
+          <TotalWeight>#{shipment_data[:weight].to_f}</TotalWeight>
           <TotalWeightUnit>
-            <Code>KG</Code>
-            <Description>Kilograms</Description>
+            <Code>#{weight_units}</Code>
+            <Description>#{weight_unit_description}</Description>
           </TotalWeightUnit>
           <TransportMode>
-            <Code>AIR</Code>
-            <Description>Air Freight</Description>
+            <Code>#{transport_mode}</Code>
+            <Description>#{transport_modes[transport_mode]}</Description>
           </TransportMode>
-          <VoyageFlightNo>QF12</VoyageFlightNo>
-          <WayBillNumber>SYD0143AUSYD7Q</WayBillNumber>
-          <WayBillType>
+
+          <!-- if transport_mode == AIR -->
+          <!--<VoyageFlightNo>QF12</VoyageFlightNo>-->
+          <!--<WayBillNumber>SYD0143AUSYD7Q</WayBillNumber>-->
+          <!--<WayBillType>
             <Code>HWB</Code>
             <Description>House Waybill</Description>
-          </WayBillType>
+          </WayBillType>-->
 
-          <DateCollection>
+          <!--<DateCollection>
             <Date>
               <Type>Departure</Type>
               <IsEstimate>true</IsEstimate>
@@ -292,9 +328,9 @@ class EadaptorService
               <IsEstimate>true</IsEstimate>
               <Value>2017-09-20T00:00:00</Value>
             </Date>
-          </DateCollection>
+          </DateCollection>-->
 
-          <OrganizationAddressCollection>
+          <!--<OrganizationAddressCollection>
             <OrganizationAddress>
               <AddressType>ConsignorDocumentaryAddress</AddressType>
               <Address1>1 long rd</Address1>
@@ -335,8 +371,8 @@ class EadaptorService
               <OrganizationCode>ETAILELAX</OrganizationCode>
               <Phone></Phone>
               <Port>
-                <Code>USLAX</Code>
-                <Name>Los Angeles</Name>
+                <Code>#{origin&.code}</Code>
+                <Name>#{origin&.proper_name}</Name>
               </Port>
               <Postcode>90210</Postcode>
               <State>CA</State>
@@ -427,9 +463,9 @@ class EadaptorService
               <Postcode>2747</Postcode>
               <State>NSW</State>
             </OrganizationAddress>
-          </OrganizationAddressCollection>
+          </OrganizationAddressCollection>-->
 
-          <PackingLineCollection Content="Complete">
+          <!--<PackingLineCollection Content="Complete">
             <PackingLine>
               <Commodity>
                 <Code>GEN</Code>
@@ -453,9 +489,9 @@ class EadaptorService
                 <Description>Kilograms</Description>
               </WeightUnit>
             </PackingLine>
-          </PackingLineCollection>
+          </PackingLineCollection>-->
 
-          <TransportLegCollection>
+          <!--<TransportLegCollection>
             <TransportLeg>
               <PortOfDischarge>
                 <Code>AUSYD</Code>
@@ -472,7 +508,7 @@ class EadaptorService
               <TransportMode>Air</TransportMode>
               <VoyageFlightNo>QF12</VoyageFlightNo>
             </TransportLeg>
-          </TransportLegCollection>
+          </TransportLegCollection>-->
         </Shipment>
       </UniversalShipment>
     XML

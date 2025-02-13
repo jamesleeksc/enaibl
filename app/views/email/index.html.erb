@@ -1,4 +1,4 @@
-<div id="emails">
+<div id="emails" class="table-responsive">
   <table class="table">
     <thead>
       <tr>
@@ -7,6 +7,8 @@
         <th>To</th>
         <th>Received</th>
         <th>Classification</th>
+        <th>Documents</th>
+        <th>POD</th>
         <th>Shipments</th>
       </tr>
     </thead>
@@ -15,15 +17,44 @@
         <% next if email.irrelevant? %>
         <tr>
           <td><%= email["subject"].truncate(50) %></td>
-          <td><%= email["from"] %></td>
-          <td><%= email["to"] %></td>
+          <td style="max-width: 200px; overflow: hidden;"><%= email["from"].truncate(200) %></td>
+          <td style="max-width: 200px; overflow: hidden;"><%= email["to"]&.truncate(200) %></td>
           <td><%= email.date.strftime("%m/%d/%Y") %></td>
           <td><%= email.html_categories %></td>
-          <!-- build shipment button -->
           <td>
-            <%= link_to new_shipment_path(email_id: email.id), class: "btn btn-primary text-nowrap", data: { turbo: false } do %>
-              Build Draft
-              <i class="fas fa-angle-double-right ms-2"></i>
+            <% email.documents.each do |doc| %>
+              <% next if doc.irrelevant? %>
+              <% categories = doc.html_categories %>
+              <% next if categories.blank? %>
+              <% next if categories.downcase.include?("irrelevant") %>
+              <div>
+                <%= link_to rails_blob_path(doc.file, disposition: "inline"),
+                            class: "text-decoration-none",
+                            data: {
+                              bs_toggle: "tooltip",
+                              bs_placement: "top",
+                              bs_title: doc.filename
+                            },
+                            target: "_blank" do %>
+                  <%= file_icon(doc.filename) %>
+                  <%= doc.html_categories %>
+                <% end %>
+              </div>
+            <% end %>
+          </td>
+          <td class="text-center">
+            <% if email.pod || email.documents.any?(&:pod) %>
+              <i class="fas fa-check-circle text-success"></i>
+            <% end %>
+          </td>
+          <td>
+            <%# TODO: temporary %>
+            <% actionables = ['carrier_quote_email', 'customer_quote_pdf', 'master_bill_of_lading', 'isf_transmission_pdf', 'house_bill_of_lading', 'commercial_invoice', 'customs_clearance', 'packing_list'] %>
+            <% if !email.irrelevant? && (actionables & email.categories).any? %>
+              <%= link_to new_shipment_path(email_id: email.id), class: "btn btn-primary text-nowrap", data: { turbo: false } do %>
+                Build Draft
+                <i class="fas fa-angle-double-right ms-2"></i>
+              <% end %>
             <% end %>
           </td>
         </tr>
