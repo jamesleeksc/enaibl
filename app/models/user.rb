@@ -8,4 +8,8 @@ class User < ApplicationRecord
   has_many :emails
   has_many :documents
   has_many :organizations
+
+  def all_documents
+    Document.where(user_id: id).or(Document.where(client_account_id: client_account_id))
+  end
 end
