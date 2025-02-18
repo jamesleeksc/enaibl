@@ -47,11 +47,18 @@ class Document < ApplicationRecord
       text = extract_text_from_pdf(file_path)
     when "image/jpeg", "image/png"
       text = extract_text_from_image(file_path)
-    when "application/vnd.openxmlformats-officedocument.wordprocessingml.document" || "application/msword"
+    when "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/msword"
       text = extract_text_from_docx(file_path)
-    when "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" || "application/vnd.ms-excel"
+    when "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/vnd.ms-excel"
       text = extract_text_from_spreadsheet(file_path)
-      # text/html message/rfc822
+    when "text/html"
+      text = extract_text_from_html(file_path)
+    when "message/rfc822"
+      create_email_record(file_path)
+      return
+    when "application/zip"
+      extract_zip_contents(file_path)
+      return
     else
       return ""
     end
@@ -61,6 +68,67 @@ class Document < ApplicationRecord
     if text.present? && will_save_change_to_content?
       save
     end
+  end
+
+  def extract_zip_contents(file_path)
+    Zip::File.open(file_path) do |zip_file|
+      zip_file.each do |entry|
+        next if entry.directory?
+        temp_file = Tempfile.new(entry.name)
+        temp_file.binmode
+        temp_file.write(entry.get_input_stream.read)
+        temp_file.rewind
+
+        doc = Document.new(
+          user: user,
+          client_account: client_account,
+          email: email
+        )
+        doc.file.attach(io: temp_file, filename: entry.name, content_type: Marcel::MimeType.for(name: entry.name))
+        doc.save
+
+        temp_file.close
+        temp_file.unlink
+      end
+    end
+  end
+
+  def create_email_record(file_path)
+    mail = Mail.read(file_path)
+    email = Email.create(
+      to: mail.to.join(", "),
+      from: mail.from.join(", "),
+      subject: mail.subject,
+      body: mail.body.decoded,
+      user: user,
+      client_account: client_account
+    )
+
+    mail.attachments.each do |attachment|
+      temp_file = Tempfile.new(attachment.filename)
+      temp_file.binmode
+      temp_file.write(attachment.body.decoded)
+      temp_file.rewind
+
+      doc = Document.new(
+        user: user,
+        client_account: client_account,
+        email: email
+      )
+      doc.file.attach(io: temp_file, filename: attachment.filename, content_type: attachment.content_type)
+      doc.save
+
+      temp_file.close
+      temp_file.unlink
+    end
+
+    self.update(email: email)
+  end
+
+  def extract_text_from_html(file_path)
+    doc = Nokogiri::HTML(File.read(file_path))
+    doc.css('script, style').remove
+    doc.text.strip
   end
 
   def extract_text_from_pdf(file_path)
@@ -160,10 +228,10 @@ class Document < ApplicationRecord
 
   def classify
     return unless content.present?
-    classification = OpenAiService.new.classify_document(content)
+    classification = OpenAiService.new.classify_document("filename: #{file.filename}, content: #{content}")
     update(category: classification)
 
-    if categories.include?("commercial_invoice") || categories.include?("shipping_invoice") || categories.include?("other_invoice")
+    if invoice_category? || email.invoice_category?
       classify_invoice
     end
   end
@@ -198,7 +266,8 @@ class Document < ApplicationRecord
       shipping_inv = false
     end
 
-    assign_attributes(invoice_content: invoice_info, shipping_invoice: shipping_inv, invoice: true)
+    is_invoice = confirmed_invoice || shipping_inv || invoice_category?
+    assign_attributes(invoice_content: invoice_info, shipping_invoice: shipping_inv, invoice: is_invoice)
     save
   end
 
@@ -283,9 +352,9 @@ class Document < ApplicationRecord
   def classify_changes
     return unless content.present?
     return unless saved_change_to_content?
-    classification = OpenAiService.new.classify_document(content)
+    classification = OpenAiService.new.classify_document("filename: #{file.filename}, content: #{content}")
     update(category: classification)
-    if categories.include?("commercial_invoice") || categories.include?("shipping_invoice") || categories.include?("other_invoice")
+    if invoice_category?
       classify_invoice
     end
   end
@@ -343,5 +412,9 @@ class Document < ApplicationRecord
     end
 
     org_names
+  end
+
+  def invoice_category?
+    categories.include?("commercial_invoice") || categories.include?("shipping_invoice") || categories.include?("other_invoice")
   end
 end

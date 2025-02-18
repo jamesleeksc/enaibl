@@ -204,13 +204,19 @@ class OpenAiService
       }
     ]
 
-    response = @client.chat(
-      parameters: {
-        model: model,
-        messages: messages,
-        max_tokens: 1000
-      }
-    )
+    begin
+      response = @client.chat(
+        parameters: {
+          model: model,
+          messages: messages,
+          max_tokens: 1000
+        }
+      )
+    rescue => e
+      puts "Error really_invoice?: #{e.message}"
+      binding.pry
+      return false
+    end
 
     response.dig("choices", 0, "message", "content").strip
   end

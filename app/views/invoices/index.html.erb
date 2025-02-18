@@ -1,4 +1,9 @@
-<h1 class="mb-4">Invoices</h1>
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>Invoices</h1>
+  <%= link_to export_invoices_path, class: "btn btn-success" do %>
+    <i class="fas fa-file-excel me-2"></i>Export to Excel
+  <% end %>
+</div>
 
 <div class="mb-4">
   <%= form_with url: invoices_path, method: :get, local: false, class: "row g-3", data: { controller: "live-filter", live_filter_target: "form", turbo_frame: "invoices" } do |f| %>
@@ -41,7 +46,7 @@
             <tr class="border-bottom">
               <td><%= document.invoice_content['invoice_number'] %></td>
               <td><%= document.invoice_content['description'] %></td>
-              <td><%= number_to_currency(document.invoice_content['total']) %></td>
+              <td><%= ViewUtils.currency_format(document.invoice_content['total'], document.invoice_content['currency']) %></td>
               <td><%= document.invoice_content['payment_terms'] %></td>
               <td>
                 <%= link_to "View Original", rails_blob_path(document.file, disposition: "inline"), target: "_blank", class: "btn btn-sm btn-outline-secondary" %>

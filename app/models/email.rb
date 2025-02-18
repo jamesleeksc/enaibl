@@ -4,8 +4,6 @@ class Email < ApplicationRecord
   has_and_belongs_to_many :shipments
   has_many :documents
 
-  # TODO: extract and classify in a job after create
-  # classify and mark relevance after create
   after_create :classify
   after_create :mark_relevance
   # TODO: Mark actionable
@@ -58,7 +56,6 @@ class Email < ApplicationRecord
   end
 
   def classify
-    # TODO: classify attachments also
     self.category = OpenAiService.new.classify_document("Subject: #{subject}\nMessage:#{body}")
     save
   end
@@ -100,5 +97,9 @@ class Email < ApplicationRecord
 
   def content
     "to: #{to}\nfrom: #{from}\nsubject: #{subject}\nbody: #{body}"
+  end
+
+  def invoice_category?
+    categories.include?("commercial_invoice") || categories.include?("shipping_invoice") || categories.include?("other_invoice")
   end
 end
