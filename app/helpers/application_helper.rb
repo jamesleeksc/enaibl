@@ -1,5 +1,7 @@
 module ApplicationHelper
   def file_icon(filename)
+    return '<i class="far fa-file text-secondary"></i>'.html_safe if filename.nil?
+
     extension = File.extname(filename).downcase
     case extension
     when '.pdf'

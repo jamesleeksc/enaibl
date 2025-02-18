@@ -31,7 +31,10 @@ class EmailController < ApplicationController
       redirect_to authorization, allow_other_host: true
     else
       @service.authorization = authorization
-      gmail_service = GmailService.new(user: current_user, authorization: authorization)
+      start_date = current_user.emails.order(:date).last&.date
+      # NOTE: in some cases, the following appears to skip some dates
+      # Emails are not processed chronologically so if this gets interrupted (possibly by token expiration) we may have saved an email with a later date than the some of the emails queued for processing
+      gmail_service = GmailService.new(user: current_user, authorization: authorization, start_date: start_date)
 
       @message_pointers = gmail_service.list_messages
 

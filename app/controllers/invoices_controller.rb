@@ -28,4 +28,35 @@ class InvoicesController < ApplicationController
   def show
     @document = Document.find(params[:id])
   end
+
+  def export
+    @documents = current_user.all_documents.invoice
+
+    package = Axlsx::Package.new
+    workbook = package.workbook
+
+    workbook.add_worksheet(name: "Invoices") do |sheet|
+      headers = ['Invoice Number', 'Date', 'Total Amount', 'Vendor', 'Item Description', 'Quantity', 'Unit Price', 'Total Price']
+      sheet.add_row headers
+
+      @documents.each do |document|
+        document.invoice_content['line_items'].each do |item|
+          sheet.add_row [
+            document.invoice_content['invoice_number'],
+            document.invoice_content['issue_date'],
+            document.invoice_content['total'],
+            document.invoice_content['pay_to_name'],
+            item["description"],
+            item["quantity"],
+            item["unit_price"],
+            item["value"]
+          ]
+        end
+      end
+    end
+
+    send_data package.to_stream.read,
+    filename: "invoices_export_#{Time.current.strftime('%Y%m%d%H%M%S')}.xlsx",
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  end
 end

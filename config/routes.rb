@@ -8,7 +8,11 @@ Rails.application.routes.draw do
   resources :client_accounts
   resources :email
   resources :shipments
-  resources :invoices
+  resources :invoices do
+    collection do
+      get :export
+    end
+  end
 
   get 'email_sync' => 'email#sync'
 

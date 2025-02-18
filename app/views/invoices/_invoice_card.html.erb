@@ -12,15 +12,16 @@
     </div>
   </div>
   <p class="card-text"><small class="text-muted"><%= document.invoice_content['description'] %></small></p>
+  <% currency = document.invoice_content['currency'] %>
   <ul class="list-group mt-3">
     <% document.invoice_content['line_items'].each do |item| %>
       <li class="list-group-item d-flex justify-content-between align-items-center">
         <%= item['description'] %>
-        <span><%= number_to_currency(item['value']) %></span>
+        <span><%= ViewUtils.currency_format(item['value'], currency) %></span>
       </li>
     <% end %>
   </ul>
-  <p class="card-text text-end"><strong>Total: <%= number_to_currency(document.invoice_content['total']) %></strong></p>
+  <p class="card-text text-end"><strong>Total: <%= ViewUtils.currency_format(document.invoice_content['total'], currency) %></strong></p>
   <p class="card-text text-end">Payment Terms: <%= document.invoice_content['payment_terms'] %></p>
   <p class="card-text text-end"><small class="text-muted"><%= document.id %></small></p>
 </div>

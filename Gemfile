@@ -12,6 +12,7 @@ gem "jbuilder"
 gem "tzinfo-data", platforms: %i[ windows jruby ]
 gem "bootsnap", require: false
 gem "roo"
+gem "roo-xls"
 gem "devise"
 gem "csv"
 gem 'google-apis-gmail_v1', '~> 0.15.0'
@@ -24,6 +25,7 @@ gem "pdf-reader"
 gem "mini_magick"
 gem "rtesseract"
 gem "docx"
+gem "caxlsx"
 
 group :development, :test do
   gem 'better_errors'
