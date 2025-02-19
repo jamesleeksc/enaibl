@@ -2,11 +2,12 @@ class Document < ApplicationRecord
   belongs_to :email, optional: true
   belongs_to :client_account, optional: true
   belongs_to :user, optional: true
-
+  belongs_to :duplicate_of, class_name: "Document", optional: true
   has_one_attached :file
   # TODO: extract and classify in a job after create
-  after_commit :extract_text
-  after_save :classify_changes
+  before_save :set_file_hash, if: -> { file.attached? && file.blob_id_changed? }
+  after_commit :extract_text, if: -> { file.attached? && filename.blank? }
+  after_save :classify_changes, if: -> { content.present? && content_changed? }
 
   scope :invoice, -> { where(invoice: true) }
   scope :ap, -> { where(invoice: true, ap_or_ar: "ap") }
@@ -16,6 +17,7 @@ class Document < ApplicationRecord
   scope :ciar, -> { where(confirmed_invoice: true, ap_or_ar: "ar") }
   scope :sciap, -> { where(confirmed_invoice: true, ap_or_ar: "ap", shipping_invoice: true) }
   scope :sciar, -> { where(confirmed_invoice: true, ap_or_ar: "ar", shipping_invoice: true) }
+  scope :no_dup, -> { where(duplicate_of: nil) }
 
   def self.classify_new!
     Document.where.not(content: nil).where(category: nil).each do |document|
@@ -142,7 +144,10 @@ class Document < ApplicationRecord
         puts "PDF read error: #{e.message}"
       end
 
-      p_text = ocr_on_pdf(file_path).strip if p_text.blank?
+      if p_text.blank?
+        p_text = ocr_on_pdf(file_path).strip
+        assign_attributes(ocr: true)
+      end
 
       text += p_text
     end
@@ -154,14 +159,22 @@ class Document < ApplicationRecord
     texts = []
 
     begin
-      images = MiniMagick::Image.read(File.open(file_path))
-      images.pages.each_with_index do |page, index|
-        page_path = File.join(Dir.tmpdir, "page_#{index}.png")
-        page.write(page_path)
+      output_prefix = File.join(Dir.tmpdir, "page")
 
+      system("pdftoppm", "-png", "-r", "300", file_path, output_prefix)
+
+      Dir.glob("#{output_prefix}-*.png").sort.each_with_index do |page_path, index|
         if File.exist?(page_path)
-          ocr = RTesseract.new(page_path)
-          extracted_text = ocr.to_s
+          if CvUtils.skew_angle(page_path).abs > 5
+            CvUtils.derotate(page_path)
+          end
+
+          ocr = RTesseract.new(page_path, lang: 'eng+spa', tessdata_dir: "#{Rails.root}/lib/tessdata", psm: 1, oem: 2)
+
+          box_text = ocr.to_box
+          self.box_content = (self.box_content || {}).merge("page_#{index + 1}" => box_text)
+          extracted_text = box_text_to_s(box_text, strip: true)
+
           texts << extracted_text
         else
           Rails.logger.error("OCR failed: Image file not found at #{page_path}")
@@ -175,6 +188,38 @@ class Document < ApplicationRecord
     end
 
     texts.join("\n\n")
+  end
+
+  def box_text_to_s(box_text, strip: false)
+    if strip
+      box_text.map { |box| box[:word].gsub(/<\/?[^>]*>/, '') }.join(' ')
+    else
+      sorted_boxes = box_text.sort_by { |box| [box[:y_start], box[:x_start]] }
+      lines = {}
+      line_height = sorted_boxes.map { |box| box[:y_end] - box[:y_start] }.max
+
+      sorted_boxes.each do |box|
+        line_index = (box[:y_start] / line_height).round
+        lines[line_index] ||= []
+        lines[line_index] << box
+      end
+
+      result = ""
+      lines.keys.sort.each do |line_index|
+        line = lines[line_index]
+        line_text = ""
+        last_x_end = 0
+        line.each do |box|
+          space_count = ((box[:x_start] - last_x_end) / 5).round
+          line_text << " " * [space_count, 1].max
+          line_text << box[:word].gsub(/<\/?[^>]*>/, '')
+          last_x_end = box[:x_end]
+        end
+        result << line_text + "\n"
+      end
+
+      result
+    end
   end
 
   def ocr_box_on_pdf(file_path)
@@ -195,7 +240,11 @@ class Document < ApplicationRecord
   end
 
   def extract_text_from_image(file_path)
-    ocr = RTesseract.new(file_path)
+    ocr = RTesseract.new(file_path, lang: 'eng+spa', options: {
+      'tessdata-dir' => "#{Rails.root}/lib/tessdata",
+      'psm' => 1,
+      'oem' => 1
+    })
     ocr.to_s
   end
 
@@ -307,6 +356,31 @@ class Document < ApplicationRecord
     end
   end
 
+  def bill_of_lading_numbers
+    return unless invoice_content.present?
+    [
+      invoice_content["house_bill_of_lading_number"],
+      invoice_content["master_bill_of_lading_number"]
+    ].compact_blank
+  end
+
+  def reference_numbers
+    return unless invoice_content.present?
+    bill_of_lading_numbers + [
+      invoice_content["order_number"],
+      invoice_content["invoice_number"]
+    ].compact_blank
+  end
+
+  def container_number_candidates
+    # starts with 4 letters
+    content.scan(/[A-Z]{4}\d{6,7}/)
+  end
+
+  def valid_container_numbers
+    container_number_candidates.select { |number| Utils.valid_container_number?(number) }
+  end
+
   def cw_shipment_number
     shipment_number = nil
     prefix = "S#{account_prefix}"
@@ -344,8 +418,48 @@ class Document < ApplicationRecord
     Document.where("content LIKE ?", "%#{prefix}%"))
   end
 
+  def self.check_duplicates
+    Document.all.each do |document|
+      document.assign_duplicate if document.duplicate?
+      document.save
+    end
+  end
+
   def account_prefix
     client_account.branch_shortcode || user.client_account.branch_shortcode
+  end
+
+  def self.duplicate?(file)
+    return false unless file.respond_to?(:read)
+
+    file_content = file.download
+    file_hash = Digest::MD5.hexdigest(file_content)
+
+    exists?(file_hash: file_hash)
+  end
+
+  def duplicate?
+    return false unless file.attached?
+    return true if duplicate_of.present?
+    file_content = file.download
+    file_hash = Digest::MD5.hexdigest(file_content)
+    dup_candidates = self.class.where("id < ?", id).where(file_hash: file_hash)
+
+    @duplicate_detected = dup_candidates.detect do |d|
+      d.user_id == user_id || d.client_account_id == client_account_id
+    end
+
+    @duplicate_detected.present?
+  end
+
+  def assign_duplicate
+    return unless duplicate?
+    assign_attributes(duplicate_of: @duplicate_detected)
+  end
+
+  def save_file_hash
+    set_file_hash
+    save
   end
 
   private
@@ -416,5 +530,12 @@ class Document < ApplicationRecord
 
   def invoice_category?
     categories.include?("commercial_invoice") || categories.include?("shipping_invoice") || categories.include?("other_invoice")
+  end
+
+  def set_file_hash
+    return unless file.attached?
+
+    file_content = file.download
+    self.file_hash = Digest::MD5.hexdigest(file_content)
   end
 end
