@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_10_01_210626) do
+ActiveRecord::Schema[7.2].define(version: 2024_10_17_223351) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -84,6 +84,15 @@ ActiveRecord::Schema[7.1].define(version: 2024_10_01_210626) do
     t.string "ap_or_ar"
     t.boolean "shipping_invoice"
     t.boolean "confirmed_invoice", default: false
+    t.boolean "ocr", default: false
+    t.string "file_hash"
+    t.integer "duplicate_of_id"
+    t.boolean "qa_flag", default: false
+    t.string "qa_flag_reason"
+    t.jsonb "box_content"
+    t.index ["client_account_id"], name: "index_documents_on_client_account_id"
+    t.index ["filename"], name: "index_documents_on_filename"
+    t.index ["user_id"], name: "index_documents_on_user_id"
   end
 
   create_table "eadaptor_data", force: :cascade do |t|
