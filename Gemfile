@@ -26,6 +26,7 @@ gem "mini_magick"
 gem "rtesseract"
 gem "docx"
 gem "caxlsx"
+gem "ffi"
 
 group :development, :test do
   gem 'better_errors'
@@ -34,6 +35,7 @@ group :development, :test do
   gem "binding_of_caller"
   gem "debug"
   gem "rubocop"
+  gem "mutex_m"
 end
 
 group :test do
