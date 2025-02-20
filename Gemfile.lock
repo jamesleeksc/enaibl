@@ -232,6 +232,7 @@ GEM
     msgpack (1.7.2)
     multi_json (1.15.0)
     multipart-post (2.4.1)
+    mutex_m (0.2.0)
     net-imap (0.4.17)
       date
       net-protocol
@@ -457,6 +458,7 @@ DEPENDENCIES
   importmap-rails
   jbuilder
   mini_magick
+  mutex_m
   pdf-reader
   pg (~> 1.1)
   pry-byebug
