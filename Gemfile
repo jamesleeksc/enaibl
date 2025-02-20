@@ -26,7 +26,6 @@ gem "mini_magick"
 gem "rtesseract"
 gem "docx"
 gem "caxlsx"
-gem "ffi"
 
 group :development, :test do
   gem 'better_errors'
