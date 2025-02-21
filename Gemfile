@@ -26,7 +26,7 @@ gem "mini_magick"
 gem "rtesseract"
 gem "docx"
 gem "caxlsx"
-
+gem "kaminari"
 group :development, :test do
   gem 'better_errors'
   gem 'web-console'

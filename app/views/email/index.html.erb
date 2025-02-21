@@ -62,4 +62,11 @@
     </tbody>
   </table>
 </div>
-<%= link_to "Load Emails", email_sync_path, class: "btn btn-primary w-100", data: { turbo: false } %>
+<div class="d-flex justify-content-between align-items-center mt-3">
+  <nav>
+    <%= paginate @emails %>
+  </nav>
+</div>
+<div class="d-flex justify-content-between align-items-center mt-3">
+  <%= link_to "Load Emails", email_sync_path, class: "btn btn-primary w-100", data: { turbo: false } %>
+</div>
