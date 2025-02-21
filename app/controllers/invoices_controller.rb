@@ -12,6 +12,7 @@ class InvoicesController < ApplicationController
     @documents = @documents.where(shipping_invoice: Utils.to_boolean(params[:shipping])) if params[:shipping].in?(%w[true false])
     @documents = @documents.where(ap_or_ar: params[:ap_or_ar]) if params[:ap_or_ar].in?(%w[ap ar])
     @documents = @documents.all_with_shipment_number(current_user) if params[:has_shipment_no] == "true"
+    @documents = @documents.where(qa_flag: true) if params[:qa_flag] == "true"
 
     if params[:search].present?
       @documents = @documents.where("invoice_content::text ILIKE :search OR content::text ILIKE :search", search: "%#{params[:search]}%")
