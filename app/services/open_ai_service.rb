@@ -282,7 +282,7 @@ class OpenAiService
 
   def extract_invoice_with_document_prompt(text)
     <<-PROMPT
-    If the invoice includes shipping information, e.g. item dimensions, weights, part numbers,etc., set is_shipping_invoice to "true". Otherwise, set it to "false" unless you strongly believe it is an invoice for freight.
+    If the invoice includes shipping information, e.g. item dimensions, weights, part numbers, etc., set is_shipping_invoice to "true". Otherwise, set it to "false" unless you strongly believe it is an invoice for freight.
 
     Extract the following information from the provided invoice document. Leave any field blank if the information is not present or cannot be determined accurately.
 
@@ -357,12 +357,15 @@ class OpenAiService
 
   def convert_pdf_to_images(file_path)
     images = []
-    MiniMagick::Image.open(file_path) do |pdf|
-      pdf.pages.each do |page|
-        page.format "jpg"
-        images << Base64.strict_encode64(page.to_blob)
-      end
+    output_prefix = File.join(Dir.tmpdir, "ai_page")
+
+    system("pdftoppm", "-png", "-r", "300", file_path, output_prefix)
+
+    Dir.glob("#{output_prefix}-*.png").sort.each do |page_path|
+      images << Base64.strict_encode64(File.read(page_path))
+      File.delete(page_path)
     end
+
     images
   end
 
