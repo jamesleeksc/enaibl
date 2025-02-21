@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2024_10_17_223351) do
+ActiveRecord::Schema[7.2].define(version: 2024_10_29_160039) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -64,6 +64,22 @@ ActiveRecord::Schema[7.2].define(version: 2024_10_17_223351) do
     t.datetime "updated_at", null: false
     t.text "alias_organizations"
     t.string "branch_shortcode"
+  end
+
+  create_table "containers", force: :cascade do |t|
+    t.string "container_number"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "document_containers", force: :cascade do |t|
+    t.bigint "document_id"
+    t.bigint "container_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["container_id"], name: "index_document_containers_on_container_id"
+    t.index ["document_id", "container_id"], name: "index_document_containers_on_document_id_and_container_id", unique: true
+    t.index ["document_id"], name: "index_document_containers_on_document_id"
   end
 
   create_table "documents", force: :cascade do |t|
