@@ -14,6 +14,8 @@ class EmailController < ApplicationController
     else
       @emails = Email.where(user_id: current_user).all
     end
+
+    @emails = @emails.order(date: :desc).page(params[:page])
     shipment_ids = @emails.joins(:shipments).pluck('shipments.id').uniq
     @shipments = Shipment.where(id: shipment_ids)
   end
