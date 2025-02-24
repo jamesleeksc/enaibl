@@ -3,11 +3,15 @@ class Document < ApplicationRecord
   belongs_to :client_account, optional: true
   belongs_to :user, optional: true
   belongs_to :duplicate_of, class_name: "Document", optional: true
+  has_many :document_containers
+  has_many :containers, through: :document_containers
+
   has_one_attached :file
   # TODO: extract and classify in a job after create
   before_save :set_file_hash, if: -> { file.attached? && file.blob_id_changed? }
   after_commit :extract_text, if: -> { file.attached? && filename.blank? }
   after_save :classify_changes, if: -> { content.present? && content_changed? }
+  after_save :reference_containers, if: -> { content.present? && content_changed? }
 
   scope :invoice, -> { where(invoice: true) }
   scope :ap, -> { where(invoice: true, ap_or_ar: "ap") }
@@ -275,6 +279,26 @@ class Document < ApplicationRecord
     text
   end
 
+  # TODO: method to algorithmically classify invoice and invoice type without AI based on regex
+  # shipping (transportation) invoice rules:
+  # received after/with a proof of delivery always
+  # truck or trailer number and container numbers listed
+  # BOL likely present or attached
+  # Says "Flete"
+  # Includes a shipping origin and destination
+  # LTL
+
+  # TODO: classify whether pages are sequential or the same document type. Identify as sub document or classify by/with page number
+
+  # TODO: QA Flag and QA Flag Reason
+
+  # NOTE: container numbers are painted on the container and do not change between shipments
+  def reference_containers
+    valid_container_numbers.each do |number|
+      containers.find_or_create_by(container_number: number, document: self)
+    end
+  end
+
   def classify
     return unless content.present?
     classification = OpenAiService.new.classify_document("filename: #{file.filename}, content: #{content}")
@@ -362,6 +386,19 @@ class Document < ApplicationRecord
       invoice_content["house_bill_of_lading_number"],
       invoice_content["master_bill_of_lading_number"]
     ].compact_blank
+  end
+
+  def invoice_dates
+    return unless invoice_content.present?
+    [
+      invoice_content["issue_date"],
+      invoice_content["due_date"],
+      invoice_content["payment_terms"]
+    ]
+  end
+
+  def dates
+    OpenAiService.new.classify_date(invoice_dates.to_s)
   end
 
   def reference_numbers
