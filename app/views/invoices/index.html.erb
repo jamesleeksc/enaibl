@@ -17,10 +17,13 @@
       <%= f.select :ap_or_ar, [["All", nil], ["AP", "ap"], ["AR", "ar"]], { selected: params[:ap_or_ar] || "ap" }, class: "form-select", data: { action: "change->live-filter#submit" } %>
     </div>
     <div class="col-auto">
-      <%= f.select :view_mode, [["Card", "card"], ["Grid", "grid"]], { selected: params[:view_mode] || "card" }, class: "form-select", data: { action: "change->live-filter#submit" } %>
+      <%= f.select :view_mode, [["Table", "table"], ["Card", "card"]], { selected: params[:view_mode] || "table" }, class: "form-select", data: { action: "change->live-filter#submit" } %>
     </div>
     <div class="col-auto">
       <%= f.select :has_shipment_no, [["All", nil], ["With Shipment Number", "true"]], { selected: params[:has_shipment_no] || "false" }, class: "form-select", data: { action: "change->live-filter#submit" } %>
+    </div>
+    <div class="col-auto">
+      <%= f.select :qa_flag, [["All", nil], ["Flagged", "true"]], { selected: params[:qa_flag] }, class: "form-select", data: { action: "change->live-filter#submit" } %>
     </div>
     <div class="col-auto">
       <%= f.text_field :search, value: params[:search], placeholder: "Search invoices", class: "form-control", data: { action: "input->live-filter#submit" } %>
@@ -29,7 +32,7 @@
 </div>
 
 <%= turbo_frame_tag "invoices" do %>
-  <% if params[:view_mode] == "grid" %>
+  <% unless params[:view_mode] == "card" %>
     <div class="table-responsive">
       <table class="table">
         <thead>
