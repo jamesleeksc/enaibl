@@ -3,6 +3,20 @@ class OpenAiService
     @client = OpenAI::Client.new(access_token: Rails.application.credentials.dig(:open_ai, :api_key))
   end
 
+  def classify_date(text)
+    model = "gpt-4o-mini"
+    prompt_record = Prompt.new(model: model, input: text, task_type: "classify_date")
+    response = @client.chat(
+      parameters: {
+        model: model,
+        messages: [{ role: "user", content: "The following three entries are the date an invoice was issued, the date it is due, and the payment terms. Format the dates as MM/DD/YYYY and pick a valid option for payment terms. Valid payment term options include [immediate, net_7, net_15, net_30, net_60, net_45, net_90, 2_10_net_30, cod, eom, cia, cwo, ppd, stage, 60_days_eom, other, unknown]. Prefer \"immediate\" over \"cod\" unless cash on delivery is explicitly stated. You may be able to infer the terms or due date from the other entries, but only if 2 of the 3 entries are present. Structure your response as strings in an array with three elements: [<formatted date>, <formatted due date>, <formatted payment term or unknown>], reply only with the array and nothing else.\n\n#{text}"}],
+        max_tokens: 1000
+      }
+    )
+
+    response.dig("choices", 0, "message", "content").strip
+  end
+
   def classify_document(text)
     classification_keys = {
       "carrier_quote_email" => "true|false",
