@@ -357,6 +357,34 @@ class OpenAiService
     PROMPT
   end
 
+  def evaluate_ocr_confidence(text)
+    model = "gpt-4o-mini"
+    prompt_record = Prompt.new(model: model, input: text, task_type: "evaluate_ocr_confidence")
+    response = @client.chat(
+      parameters: {
+        model: model,
+        messages: [{ role: "user", content: "The following text was processed from a document using OCR technology, please respond with the confidence score as a number between 0 and 1: #{text}" }],
+        max_tokens: 1000
+      }
+    )
+
+    response.dig("choices", 0, "message", "content").strip
+  end
+
+  def repair_ocr_errors(text)
+    model = "gpt-4o-mini"
+    prompt_record = Prompt.new(model: model, input: text, task_type: "repair_ocr_errors")
+    response = @client.chat(
+      parameters: {
+        model: model,
+        messages: [{ role: "user", content: "The following text was processed from a document using OCR technology, please repair the errors and return the corrected text: #{text}" }],
+        max_tokens: 1000
+      }
+    )
+
+    response.dig("choices", 0, "message", "content").strip
+  end
+
   def convert_to_images(file_path)
     extension = File.extname(file_path).downcase
     case extension
