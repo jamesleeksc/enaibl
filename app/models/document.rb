@@ -7,7 +7,7 @@ class Document < ApplicationRecord
   has_many :containers, through: :document_containers
 
   has_one_attached :file
-  # TODO: extract and classify in a job after create
+  # TODO: extract and classify in a background job after create
   before_save :set_file_hash, if: -> { file.attached? && file.blob_id_changed? }
   after_commit :extract_text, if: -> { file.attached? && filename.blank? }
   after_save :classify_changes, if: -> { content.present? && content_changed? }
@@ -279,18 +279,82 @@ class Document < ApplicationRecord
     text
   end
 
-  # TODO: method to algorithmically classify invoice and invoice type without AI based on regex
-  # shipping (transportation) invoice rules:
-  # received after/with a proof of delivery always
-  # truck or trailer number and container numbers listed
-  # BOL likely present or attached
-  # Says "Flete"
-  # Includes a shipping origin and destination
-  # LTL
+  def transportation_invoice_content?
+    # method to algorithmically classify invoice type without AI based on regex
+    # shipping (transportation) invoice rules:
+    # received after/with a proof of delivery always
+    # truck or trailer number and container numbers listed
+    # BOL likely present or attached
+    # Says "Flete"
+    # Includes a shipping origin and destination
+    # LTL
+    return false unless confirmed_invoice?
+    return true if valid_container_numbers.any?
+    !content.match?(/warehouse/i) &&
+    (content.match?(/flete|freight|LTL|truck|trailer no|trailer number|trailer\w?#|container number|container\s?#|container\snumber|container no/i) ||
+    content.match?(/origin/i) && content.match?(/destination/i) ||
+    invoice_content["origin"].present? && invoice_content["destination"].present?)
+  end
 
-  # TODO: classify whether pages are sequential or the same document type. Identify as sub document or classify by/with page number
+  def confidence
+    return 0 unless ocr?
+    OpenAiService.new.evaluate_ocr_confidence(content)
+  end
 
-  # TODO: QA Flag and QA Flag Reason
+  def assign_qa_flag
+    # QA reasons:
+    # - invoice original attached document is not a PDF
+    # - can't find related shipment number in document
+    #     - TODO: also actually check with system
+    # - OCR and low confidence
+    # - Missing key information
+    #     - missing total amount
+    #     - missing date information
+    #     - missing pay to name
+    #     - missing bill to name
+    # - Very large invoice
+    # - Untrusted from email? - TODO
+    return unless confirmed_invoice?
+
+    reasons = []
+
+    reasons << "invoice original attached document is not a PDF" unless file.content_type == "application/pdf"
+    reasons << "can't find related shipment number in document" unless cw_shipment_number.present?
+    reasons << "OCR and low confidence" if ocr? && confidence < 0.8
+
+    if invoice_content["total_amount"].blank?
+      reasons << "missing total amount"
+    end
+
+    if invoice_dates.compact_blank.size == 0
+      reasons << "missing date information"
+    end
+
+    if invoice_content["pay_to_name"].blank?
+      reasons << "missing pay to name"
+    end
+
+    if invoice_content["bill_to_name"].blank?
+      reasons << "missing bill to name"
+    end
+
+    if invoice_content["total_amount"].to_i > 10_000
+      reasons << "total amount is greater than $10,000"
+    end
+
+    if reasons.any?
+      assign_attributes(qa_flag: true, qa_flag_reason: reasons.join(", "))
+    else
+      assign_attributes(qa_flag: false, qa_flag_reason: nil)
+    end
+  end
+
+  def repair_ocr_errors(should_save: true)
+    return unless ocr?
+    new_content = OpenAiService.new.repair_ocr_errors(content)
+    update(content: new_content) if should_save
+    new_content
+  end
 
   # NOTE: container numbers are painted on the container and do not change between shipments
   def reference_containers
@@ -341,6 +405,18 @@ class Document < ApplicationRecord
 
     is_invoice = confirmed_invoice || shipping_inv || invoice_category?
     assign_attributes(invoice_content: invoice_info, shipping_invoice: shipping_inv, invoice: is_invoice)
+
+    date_info = dates
+    invoice_info["issue_date"] = date_info["issue_date"]
+    invoice_info["due_date"] = date_info["due_date"]
+    invoice_info["payment_terms"] = date_info["payment_terms"]
+    assign_attributes(invoice_content: invoice_info)
+    assign_qa_flag
+
+    unless shipping_invoice
+      assign_attributes(shipping_invoice: transportation_invoice_content?)
+    end
+
     save
   end
 
@@ -398,7 +474,13 @@ class Document < ApplicationRecord
   end
 
   def dates
-    OpenAiService.new.classify_date(invoice_dates.to_s)
+    begin
+      response = OpenAiService.new.classify_date(invoice_dates.to_s)
+      return JSON.parse(response)
+    rescue => e
+      Rails.logger.error("Error classifying dates: #{e.message}")
+      invoice_dates
+    end
   end
 
   def reference_numbers
