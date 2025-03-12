@@ -342,6 +342,10 @@ class Document < ApplicationRecord
       reasons << "total amount is greater than $10,000"
     end
 
+    if content.match?(/quick\s?pay/i) || email.body.match?(/quick\s?pay/i)
+      reasons << "quick pay requested"
+    end
+
     if reasons.any?
       assign_attributes(qa_flag: true, qa_flag_reason: reasons.join(", "))
     else
