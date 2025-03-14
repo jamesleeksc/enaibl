@@ -1,6 +1,6 @@
 source "https://rubygems.org"
 
-ruby "3.3.3"
+ruby "3.3.5"
 gem "rails", "~> 7.2.0"
 gem "sprockets-rails"
 gem "pg", "~> 1.1"
@@ -27,6 +27,7 @@ gem "rtesseract"
 gem "docx"
 gem "caxlsx"
 gem "kaminari"
+
 group :development, :test do
   gem 'better_errors'
   gem 'web-console'
