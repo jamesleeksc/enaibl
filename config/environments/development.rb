@@ -80,7 +80,7 @@ Rails.application.configure do
   config.web_console.permissions = '0.0.0.0/0'
   config.web_console.permissions = '::/0'
 
-  config.hosts << "localhost:3000"
+  config.hosts << "localhost:3634"
   config.hosts << ENV["NGROK_URL"]
   config.hosts.clear
 end
